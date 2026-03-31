@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CertifyPro – Certificate Studio</title>
+  <meta name="description" content="Generate and email personalized certificates in bulk.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070b14;
+      --surface: #0d1424;
+      --surface2: #131d33;
+      --border: rgba(255,255,255,0.07);
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.2);
+      --green: #10b981;
+      --green-glow: rgba(16,185,129,0.2);
+      --red: #ef4444;
+      --red-glow: rgba(239,68,68,0.15);
+      --amber: #f59e0b;
+      --radius: 12px;
+    }
+    html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+    
+    /* Layout */
+    #app { display: flex; flex-direction: column; height: 100%; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--border); background: rgba(13,20,36,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), #6366f1); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: white; }
+    .logo-text { font-weight: 700; font-size: 16px; }
+    .logo-sub { font-size: 11px; color: var(--muted); font-weight: 400; }
+    #healthBadge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; border: 1px solid; }
+    .badge-ok { color: var(--green); border-color: var(--green); background: var(--green-glow); }
+    .badge-warn { color: var(--amber); border-color: var(--amber); background: rgba(245,158,11,0.15); }
+    
+    main { display: flex; flex: 1; overflow: hidden; }
+    
+    /* Sidebar */
+    #sidebar { width: 380px; min-width: 380px; overflow-y: auto; border-right: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; gap: 0; position: relative; z-index: 10; }
+    .section { padding: 20px; border-bottom: 1px solid var(--border); }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .step-num { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+    .step-blue { background: var(--accent-glow); color: var(--accent); }
+    .step-purple { background: rgba(99,102,241,0.2); color: #a78bfa; }
+    .step-green { background: var(--green-glow); color: var(--green); }
+
+    label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+    input[type=text], input[type=email], textarea, select {
+      width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px;
+      color: var(--text); font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.2s;
+    }
+    input[type=text]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 80px; }
+    input[type=file] { display: none; }
+    .file-label { display: flex; align-items: center; gap: 8px; padding: 9px 14px; background: var(--surface2); border: 1px dashed var(--border); border-radius: 8px; cursor: pointer; font-size: 12px; color: var(--muted); transition: all 0.2s; }
+    .file-label:hover { border-color: var(--accent); color: var(--accent); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    input[type=color] { width: 100%; height: 36px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: var(--bg); padding: 2px; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 18px; border-radius: 9px; font-weight: 600; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s; width: 100%; }
+    .btn-blue { background: var(--accent); color: white; }
+    .btn-blue:hover { background: #2563eb; }
+    .btn-green { background: var(--green); color: #022c22; }
+    .btn-green:hover { background: #059669; }
+    .btn-red { background: transparent; color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+    .btn-red:hover { background: var(--red-glow); }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Stats row */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+    .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 10px; text-align: center; }
+    .stat-val { font-size: 20px; font-weight: 700; line-height: 1; }
+    .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; text-transform: uppercase; font-weight: 600; }
+    .val-pending { color: var(--amber); }
+    .val-sent { color: var(--green); }
+    .val-failed { color: var(--red); }
+
+    /* Canvas area */
+    #canvasArea { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px; background: #080c16; gap: 16px; overflow-y: auto; overflow-x: hidden; }
+    .canvas-toolbar { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 860px; }
+    .canvas-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    #certCanvas { border-radius: 6px; border: 1px solid var(--border); cursor: crosshair; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 100%; max-height: calc(100vh - 200px); }
+
+    /* Participants table */
+    #tableWrap { width: 100%; max-width: 860px; flex: 1; min-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; padding: 8px 12px; color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); background: var(--surface2); position: sticky; top: 0; }
+    td { padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .tag-pending { background: rgba(245,158,11,0.15); color: var(--amber); }
+    .tag-sent { background: var(--green-glow); color: var(--green); }
+    .tag-failed { background: var(--red-glow); color: var(--red); }
+
+    /* Error box */
+    #errBox { display: none; background: var(--red-glow); border: 1px solid rgba(239,68,68,0.3); border-radius: 9px; padding: 10px 14px; font-size: 12px; color: #fca5a5; word-break: break-word; }
+
+    /* Toast */
+    #toast { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 360px; }
+    #toast.show { opacity: 1; }
+    .toast-ok { background: #064e3b; border: 1px solid var(--green); color: #6ee7b7; }
+    .toast-err { background: #450a0a; border: 1px solid var(--red); color: #fca5a5; }
+
+    /* Spinner */
+    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .gap-8 { gap: 8px; }
+    .flex { display: flex; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 99px; }
+
+    #emptyTable { text-align: center; padding: 24px; color: var(--muted); font-size: 12px; display: none; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">CP</div>
+      <div>
+        <div class="logo-text">Certificate Studio</div>
+        <div class="logo-sub">Design · Generate · Dispatch</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span id="healthBadge" class="badge-warn">Checking…</span>
+      <a href="/download-certificates" class="btn btn-ghost" style="width:auto;padding:7px 14px;font-size:12px;">⬇ Download All PDFs</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- ========== SIDEBAR ========== -->
+    <div id="sidebar">
+
+      <!-- STEP 1: Design -->
+      <div class="section">
+        <div class="section-title"><span class="step-num step-blue">1</span> Template & Design</div>
+
+        <label>Certificate Template (PNG / JPG)</label>
+        <label for="bgUpload" class="file-label">📁 <span id="bgFileName">Choose image…</span></label>
+        <input type="file" id="bgUpload" accept="image/*">
+
+        <div class="row2 mt-3">
+          <div>
+            <label>Font Style</label>
+            <select id="fontFamily">
+              <option value="Helvetica-Bold">Sans-Serif (Default)</option>
+              <option value="Times-Bold">Serif</option>
+              <option value="Courier-Bold">Monospace</option>
+            </select>
+          </div>
+          <div>
+            <label>Size: <span id="szVal">36</span>px</label>
+            <input type="range" id="fontSize" min="8" max="96" value="36">
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <label>Text Color</label>
+          <input type="color" id="fontColor" value="#000000">
+        </div>
+
+        <div class="mt-3">
+          <button class="btn btn-blue" id="btnSaveLayout">Publish Layout →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Import -->
+      <div class="section">
+        <div class="section-title"><span class="step-num step-purple">2</span> Import Participants CSV</div>
+
+        <div class="stats">
+          <div class="stat"><div class="stat-val val-pending" id="statPending">0</div><div class="stat-lbl">Pending</div></div>
+          <div class="stat"><div class="stat-val val-sent" id="statSent">0</div><div class="stat-lbl">Sent</div></div>
+          <div class="stat"><div class="stat-val val-failed" id="statFailed">0</div><div class="stat-lbl">Failed</div></div>
+        </div>
+
+        <label>CSV file (columns: <code>Name, Email</code>)</label>
+        <label for="csvUpload" class="file-label">📋 <span id="csvFileName">Choose CSV file…</span></label>
+        <input type="file" id="csvUpload" accept=".csv">
+
+        <div class="grid2 mt-3">
+          <button class="btn btn-ghost" id="btnRefresh" style="width:100%;">↺ Refresh</button>
+          <button class="btn btn-red" id="btn_clear_data_purge">✕ Clear All Data</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Dispatch -->
+      <div class="section">
+        <div class="section-title"><span class="step-num step-green">3</span> Email Dispatch</div>
+
+        <div>
+          <label>Email Subject</label>
+          <input type="text" id="emailSubject" placeholder="Your Certificate – Event Name">
+        </div>
+        <div class="mt-3">
+          <label>Message Body</label>
+          <textarea id="emailBody" placeholder="Congratulations on your participation…"></textarea>
+        </div>
+
+        <div id="errBox" class="mt-3"></div>
+
+        <div class="mt-3">
+          <button class="btn btn-green" id="btn_send_batch_dispatch">🚀 Generate &amp; Send Emails</button>
+        </div>
+        <div class="mt-2">
+          <button class="btn btn-ghost" id="btnRetry" style="font-size:12px;">↺ Retry Failed</button>
+        </div>
+        <div class="mt-2">
+          <button class="btn btn-red" id="btnResetStatus" style="font-size:12px; border-color: rgba(239,68,68,0.2);">↺ Reset All to Pending</button>
+        </div>
+      </div>
+
+      <!-- SMTP Info -->
+      <div class="section" style="background: rgba(59,130,246,0.04);">
+        <div class="section-title" style="margin-bottom:8px;">⚙ SMTP Config</div>
+        <div style="font-size:11px; color:var(--muted); line-height:1.6;">
+          Credentials are loaded from <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">.env</code> file.<br>
+          <strong id="smtpStatus" style="color:var(--green);">Checking…</strong>
+          <div class="mt-2" style="border-top:1px solid var(--border);padding-top:8px;">
+            <a href="/layout" target="_blank" style="color:var(--accent);text-decoration:none;font-size:10px;">📄 View/Download layout.json</a>
+            <div id="debugBar" style="margin-top:8px; border-top:1px dashed var(--border); padding-top:8px; font-family:monospace; color:var(--muted); font-size:9px;">
+              DB: <span id="debugDbPath">...</span><br/>
+              Total In DB: <b id="debugDbCount">...</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+
+    <!-- ========== MAIN CANVAS AREA ========== -->
+    <div id="canvasArea">
+      <div class="canvas-toolbar">
+        <span class="canvas-label">🎨 Preview Canvas — drag to position name</span>
+        <span style="font-size:11px; color:var(--muted);">Sample: "<span id="previewNameHint">John Doe</span>"</span>
+      </div>
+
+      <canvas id="certCanvas" width="850" height="520"></canvas>
+
+      <!-- Participants Table -->
+      <div class="canvas-toolbar" style="margin-top:4px;">
+        <span class="canvas-label">👥 Participants</span>
+        <span id="tableInfo" style="font-size:11px; color:var(--muted);"></span>
+      </div>
+      <div id="tableWrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Status</th><th>Error</th></tr></thead>
+          <tbody id="participantBody"></tbody>
+        </table>
+        <div id="emptyTable">No participants yet. Import a CSV to get started.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+// x, y are in CANVAS pixels (for rendering).
+// When saving/loading from backend, they are converted to RATIOS (0-1).
+const S = {
+  x: 425, y: 260,
+  fontSize: 40, fontFamily: 'Helvetica-Bold', color: '#000000',
+  maxWidth: 0.7,
+  sampleName: 'Laukik Rathod',
+  bgImg: new Image(), bgLoaded: false,
+  bgBust: Date.now()
+};
+let isDragging = false;
+
+// ============================================================
+//  CANVAS
+// ============================================================
+const canvas = document.getElementById('certCanvas');
+const ctx    = canvas.getContext('2d');
+
+const FONT_MAP = {
+  'Helvetica-Bold':        'Arial, sans-serif',
+  'Helvetica':             'Arial, sans-serif',
+  'Times-Bold':            'Georgia, serif',
+  'Times-Roman':           'Georgia, serif',
+  'Courier-Bold':          '"Courier New", monospace',
+  'Courier':               '"Courier New", monospace',
+  // legacy friendly names
+  'Sans':  'Arial, sans-serif',
+  'Serif': 'Georgia, serif',
+  'Mono':  '"Courier New", monospace',
+};
+
+function renderCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // background
+  if (S.bgLoaded) {
+    ctx.drawImage(S.bgImg, 0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.font = '13px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Upload a certificate template image to preview it here', canvas.width/2, canvas.height/2 - 10);
+  }
+  // name text
+  ctx.font = `bold ${S.fontSize}px ${FONT_MAP[S.fontFamily] || 'Arial, sans-serif'}`;
+  ctx.fillStyle = S.color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic'; // Matches ReportLab baseline drawing directly
+  // shadow for readability
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 4;
+  ctx.fillText(S.sampleName, S.x, S.y);
+  ctx.shadowBlur = 0;
+  // crosshair dot
+  ctx.beginPath();
+  ctx.arc(S.x, S.y, 4, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(59,130,246,0.8)';
+  ctx.fill();
+}
+
+function loadBg() {
+  S.bgImg = new Image();
+  S.bgImg.onload  = () => { 
+    S.bgLoaded = true;
+    const aspect = S.bgImg.naturalWidth / S.bgImg.naturalHeight;
+    canvas.width = 850;
+    canvas.height = 850 / aspect;
+    renderCanvas(); 
+  };
+  S.bgImg.onerror = () => { S.bgLoaded = false; renderCanvas(); };
+  S.bgImg.src = `/template-preview?v=${S.bgBust}`;
+}
+
+// Drag to position name
+canvas.addEventListener('mousedown', e => {
+  isDragging = true;
+  const r = canvas.getBoundingClientRect();
+  S.x = (e.clientX - r.left) * (canvas.width / r.width);
+  S.y = (e.clientY - r.top)  * (canvas.height / r.height);
+  renderCanvas();
+});
+canvas.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const r = canvas.getBoundingClientRect();
+  S.x = (e.clientX - r.left) * (canvas.width / r.width);
+  S.y = (e.clientY - r.top)  * (canvas.height / r.height);
+  renderCanvas();
+});
+window.addEventListener('mouseup', () => isDragging = false);
+
+// ============================================================
+//  UI CONTROLS
+// ============================================================
+document.getElementById('fontFamily').addEventListener('change', e => { S.fontFamily = e.target.value; renderCanvas(); });
+document.getElementById('fontSize').addEventListener('input', e => {
+  S.fontSize = parseInt(e.target.value);
+  document.getElementById('szVal').textContent = S.fontSize;
+  renderCanvas();
+});
+document.getElementById('fontColor').addEventListener('input', e => {
+  S.color = e.target.value;
+  renderCanvas();
+});
+
+// ============================================================
+//  TOAST
+// ============================================================
+let toastTimer;
+function toast(msg, isErr=false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + (isErr ? 'toast-err' : 'toast-ok');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+}
+
+// ============================================================
+//  ERROR BOX
+// ============================================================
+function showErr(msg) {
+  const el = document.getElementById('errBox');
+  el.style.display = 'block';
+  el.textContent = '⚠ ' + msg;
+}
+function clearErr() {
+  const el = document.getElementById('errBox');
+  el.style.display = 'none';
+  el.textContent = '';
+}
+
+// ============================================================
+//  SPINNER HELPERS
+// ============================================================
+function setBtnLoading(id, label, loading) {
+  const btn = document.getElementById(id);
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spinner"></span> ' + label : label;
+}
+
+// ============================================================
+//  API: Health check
+// ============================================================
+async function fetchHealth() {
+  try {
+    const res  = await fetch('/health');
+    const data = await res.json();
+    const badge = document.getElementById('healthBadge');
+    const smtp  = document.getElementById('smtpStatus');
+
+    if (data.credentials_ok) {
+      badge.className = 'badge-ok';
+      badge.textContent = data.template_set ? '✓ Ready' : '⚠ No Template';
+      smtp.style.color = '#10b981';
+      smtp.textContent = 'Credentials configured ✓';
+    } else {
+      badge.className = 'badge-warn';
+      badge.textContent = '⚠ No Email Creds';
+      smtp.style.color = '#f59e0b';
+      smtp.textContent = 'Set SENDER_EMAIL & APP_PASSWORD in .env';
+    }
+  } catch { /* ignore */ }
+}
+
+// ============================================================
+//  API: Status / Participant table
+// ============================================================
+async function fetchStatus() {
+  try {
+    const res  = await fetch('/status');
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return;
+
+    const pending = rows.filter(r => r.status === 'pending').length;
+    const sent    = rows.filter(r => r.status === 'sent').length;
+    const failed  = rows.filter(r => r.status === 'failed').length;
+
+    document.getElementById('statPending').textContent = pending;
+    document.getElementById('statSent').textContent    = sent;
+    document.getElementById('statFailed').textContent   = failed;
+    
+    // Refresh debug count too
+    if (document.getElementById('debugDbCount')) {
+      document.getElementById('debugDbCount').textContent = rows.length;
+    }
+
+    // Update send button label
+    const sendBtn = document.getElementById('btn_send_batch_dispatch');
+    if (sendBtn && !sendBtn.disabled) {
+      sendBtn.textContent = pending > 0 ? `🚀 Generate & Send (${pending} pending)` : '🚀 Generate & Send Emails';
+    }
+
+    // Force Laukik Rathod as the layout preview sample name
+    S.sampleName = 'Laukik Rathod';
+    document.getElementById('previewNameHint').textContent = S.sampleName;
+    renderCanvas();
+
+    // Render table
+    const tbody = document.getElementById('participantBody');
+    const empty = document.getElementById('emptyTable');
+    document.getElementById('tableInfo').textContent = rows.length ? `${rows.length} total` : '';
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td title="${esc(r.name)}">${esc(r.name)}</td>
+        <td title="${esc(r.email)}" style="color:var(--muted)">${esc(r.email)}</td>
+        <td><span class="tag tag-${r.status}">${r.status}</span></td>
+        <td title="${esc(r.error_message||'')}" style="color:var(--red);font-size:11px;">${r.error_message ? '⚠ '+r.error_message.substring(0,60) : '—'}</td>
+      </tr>`).join('');
+  } catch(e) { console.error('fetchStatus', e); }
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
+//  API: Load layout
+// ============================================================
+async function fetchLayout() {
+  try {
+    const res = await fetch('/layout');
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // color
+    if (data.color) { S.color = data.color; document.getElementById('fontColor').value = data.color; }
+
+    // font_size is stored as ratio (0-1) relative to page width.
+    // Approximate display: treat canvas width (850) as reference.
+    if (data.font_size != null) {
+      const fs = parseFloat(data.font_size);
+      // If already a ratio (<2), convert to canvas pixels for the slider
+      S.fontSize = fs < 2 ? Math.round(fs * 850) : Math.round(fs);
+      document.getElementById('fontSize').value = S.fontSize;
+      document.getElementById('szVal').textContent = S.fontSize;
+    }
+
+    // font_family
+    if (data.font_family) {
+      S.fontFamily = data.font_family;
+      document.getElementById('fontFamily').value = data.font_family;
+    }
+
+    // max_width (ratio)
+    if (data.max_width != null) S.maxWidth = parseFloat(data.max_width);
+
+    // name_x / name_y are stored as ratios (0-1).
+    // Convert to canvas pixel coordinates for rendering.
+    if (data.name_x != null && data.name_y != null) {
+      S.x = parseFloat(data.name_x) * canvas.width;
+      // y_ratio=0 is TOP of page; canvas y=0 is also top — direct mapping
+      S.y = parseFloat(data.name_y) * canvas.height;
+    }
+
+    renderCanvas();
+  } catch(e) { console.error('fetchLayout error', e); }
+}
+
+// ============================================================
+//  TEMPLATE UPLOAD
+// ============================================================
+document.getElementById('bgUpload').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  document.getElementById('bgFileName').textContent = file.name;
+  e.target.value = '';
+  const fd = new FormData(); fd.append('file', file);
+  toast('Uploading template…');
+  try {
+    const res = await fetch('/upload-template', { method: 'POST', body: fd });
+    if (res.ok) {
+      toast('Template uploaded ✓');
+      S.bgBust = Date.now();
+      loadBg();
+      fetchHealth();
+    } else {
+      const d = await res.json();
+      toast(d.detail || 'Upload failed', true);
+    }
+  } catch { toast('Network error uploading template', true); }
+});
+
+// ============================================================
+//  CSV UPLOAD
+// ============================================================
+document.getElementById('csvUpload').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  document.getElementById('csvFileName').textContent = file.name;
+  e.target.value = '';
+  const fd = new FormData(); fd.append('file', file);
+  toast('Processing CSV…');
+  clearErr();
+  try {
+    const res  = await fetch('/generate-certificates', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (res.ok) {
+      const s = data.summary;
+      toast(`CSV processed! ✓ Added/Updated: ${s.generated || s.sent}, Skipped: ${s.skipped}, Failed: ${s.failed}`);
+      fetchStatus();
+    } else {
+      toast(data.detail || 'CSV upload failed', true);
+      showErr(data.detail || 'CSV upload failed');
+    }
+  } catch(err) { toast('Network error processing CSV', true); }
+});
+
+// ============================================================
+//  PUBLISH LAYOUT
+// ============================================================
+document.getElementById('btnSaveLayout').addEventListener('click', async () => {
+  setBtnLoading('btnSaveLayout', 'Publish Layout →', true);
+  try {
+    // Convert canvas pixel positions → ratios (0-1) for storage.
+    // These ratios are resolution-independent and scale to any PDF template size.
+    const xRatio      = S.x / canvas.width;
+    const yRatio      = S.y / canvas.height;  // 0=top, 1=bottom
+    const sizeRatio   = S.fontSize / canvas.width;  // font size as fraction of width
+
+    const payload = {
+      name_x:      xRatio,
+      name_y:      yRatio,
+      font_size:   sizeRatio,
+      font_family: S.fontFamily,
+      color:       S.color,
+      max_width:   S.maxWidth,
+    };
+
+    console.log('[PUBLISH LAYOUT] Sending payload:', payload);
+
+    const res = await fetch('/layout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const result = await res.json();
+      console.log('[PUBLISH LAYOUT] Server response:', result);
+      toast('Layout saved & all certificates regenerated ✓');
+    } else {
+      const err = await res.json().catch(() => ({}));
+      toast('Layout save failed: ' + (err.detail || res.status), true);
+    }
+  } catch(e) { 
+    console.error('Layout save error', e);
+    toast('Layout save network error', true); 
+  }
+  setBtnLoading('btnSaveLayout', 'Publish Layout →', false);
+});
+
+// ============================================================
+//  CLEAR ALL DATA (HARD PURGE)
+// ============================================================
+document.getElementById('btn_clear_data_purge').addEventListener('click', async () => {
+  if (!confirm('This will COMPLETELY WIPE the participants list. Continue?')) return;
+  try {
+    const res = await fetch('/participants', { method: 'DELETE' });
+    if (res.ok) { 
+      toast('Success: Database cleared'); 
+      // Manually reset stats to 0 for instant feedback
+      document.getElementById('statPending').textContent = '0';
+      document.getElementById('statSent').textContent = '0';
+      document.getElementById('statFailed').textContent = '0';
+      fetchStatus(); 
+    }
+  } catch (e) { toast('Purge failed', true); }
+});
+
+// ============================================================
+//  REFRESH
+// ============================================================
+document.getElementById('btnRefresh').addEventListener('click', () => { fetchStatus(); toast('Refreshed ✓'); });
+
+// ============================================================
+//  DISPATCH EMAILS (BATCH)
+// ============================================================
+document.getElementById('btn_send_batch_dispatch').addEventListener('click', async () => {
+  const pending = +document.getElementById('statPending').textContent;
+  if (pending === 0) { toast('No pending participants found.', true); return; }
+  if (!confirm(`Ready to send ${pending} certificates?`)) return;
+
+  clearErr();
+  setBtnLoading('btn_send_batch_dispatch', 'Dispatching…', true);
+  try {
+    const res = await fetch('/send-emails', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        subject: document.getElementById('emailSubject').value.trim() || null,
+        message_body: document.getElementById('emailBody').value.trim() || null
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      toast(`Dispatch Done! Sent: ${data.summary.sent}`);
+      fetchStatus();
+    }
+  } catch (e) { toast('Dispatch error', true); }
+  setBtnLoading('btn_send_batch_dispatch', '🚀 Generate & Send Emails', false);
+});
+
+// ============================================================
+//  RETRY FAILED
+// ============================================================
+document.getElementById('btnRetry').addEventListener('click', async () => {
+  const failed = +document.getElementById('statFailed').textContent;
+  if (failed === 0) { toast('No failed participants to retry.', true); return; }
+  clearErr();
+  setBtnLoading('btnRetry', 'Retrying…', true);
+  try {
+    const res  = await fetch('/retry-failed', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+    const data = await res.json();
+    if (res.ok) {
+      const s = data.summary;
+      toast(`Retry done: Resent ${s.resent_successfully}, Still failed: ${s.still_failed}`);
+    } else {
+      toast(data.detail || 'Retry failed', true);
+    }
+  } catch { toast('Network error during retry', true); }
+  setBtnLoading('btnRetry', '↺ Retry Failed', false);
+  fetchStatus();
+});
+
+// ============================================================
+//  RESET STATUS
+// ============================================================
+document.getElementById('btnResetStatus').addEventListener('click', async () => {
+  if (!confirm('Mark ALL participants as "pending"? This allows you to re-send certificates to everyone. (Records are NOT deleted)')) return;
+  setBtnLoading('btnResetStatus', 'Resetting…', true);
+  try {
+    const res = await fetch('/reset-status', { method: 'POST' });
+    if (res.ok) { toast('All participants reset to pending ✓'); fetchStatus(); }
+    else toast('Reset failed', true);
+  } catch { toast('Reset network error', true); }
+  setBtnLoading('btnResetStatus', '↺ Reset All to Pending', false);
+});
+
+// ============================================================
+//  DEBUG INFO
+// ============================================================
+async function fetchDebug() {
+  try {
+    const res = await fetch('/debug-info');
+    const data = await res.json();
+    document.getElementById('debugDbPath').textContent = data.db_path;
+    document.getElementById('debugDbCount').textContent = data.participant_count;
+  } catch(e) { console.error('Debug fetch failed', e); }
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+fetchHealth();
+fetchLayout();
+fetchStatus();
+fetchDebug();
+loadBg();
+renderCanvas();
+setInterval(fetchStatus, 5000);
+setInterval(fetchHealth, 15000);
+</script>
+</body>
+</html>
